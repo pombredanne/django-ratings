@@ -20,7 +20,12 @@ try:
     from hashlib import md5
 except ImportError:
     from md5 import new as md5
-    
+
+try:
+    from django.utils.timezone import now
+except ImportError:
+    now = datetime.now
+
 def md5_hexdigest(value):
     return md5(value).hexdigest()
 
@@ -118,6 +123,9 @@ class RatingManager(object):
         except Vote.DoesNotExist:
             pass
         return
+    
+    def get_iterable_range(self):
+        return range(1, self.field.range) #started from 1, because 0 is equal to delete
         
     def add(self, score, user, ip_address, cookies={}, commit=True):
         """add(score, user, ip_address)
@@ -159,7 +167,7 @@ class RatingManager(object):
         
         use_cookies = (self.field.allow_anonymous and self.field.use_cookies)
         if use_cookies:
-            defaults['cookie'] = datetime.now().strftime('%Y%m%d%H%M%S%f') # -> md5_hexdigest?
+            defaults['cookie'] = now().strftime('%Y%m%d%H%M%S%f') # -> md5_hexdigest?
             # TODO: move 'vote-%d.%d.%s' to settings or something
             cookie_name = 'vote-%d.%d.%s' % (kwargs['content_type'].pk, kwargs['object_id'], kwargs['key'][:6],) # -> md5_hexdigest?
             cookie = cookies.get(cookie_name) # try to get existent cookie value
